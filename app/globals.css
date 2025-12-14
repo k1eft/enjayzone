@@ -1,0 +1,13 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* This applies your colors everywhere */
+:root {
+  --foreground-rgb: 0, 0, 0;
+}
+
+body {
+  color: #4a4a4a; /* nj-text */
+  background: white;
+}
