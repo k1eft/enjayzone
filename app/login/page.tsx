@@ -2,7 +2,8 @@
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
-import { Loader2, Mail, Lock, Gamepad2 } from "lucide-react"; // Using Gamepad2 as Discord icon placeholder
+import Link from "next/link"; // 👈 Don't forget this!
+import { Loader2, Mail, Lock, Gamepad2 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 
 export default function Login() {
@@ -10,34 +11,28 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isSignUp, setIsSignUp] = useState(false);
 
-  // 📧 Email Login/Signup
-  const handleAuth = async () => {
+  // 📧 Email Login Only (Signup is handled elsewhere now)
+  const handleLogin = async () => {
     setLoading(true);
-    if (isSignUp) {
-      const { error } = await supabase.auth.signUp({ email, password });
-      if (error) toast.error(error.message);
-      else toast.success("Check your email to confirm! 📧");
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      toast.error(error.message);
     } else {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) toast.error(error.message);
-      else {
-        toast.success("Welcome back! 👋");
-        router.refresh();
-        router.push("/");
-      }
+      toast.success("Welcome back! 👋");
+      router.refresh();
+      router.push("/");
     }
     setLoading(false);
   };
 
-  // 👾 DISCORD LOGIN (The New Feature)
+  // 👾 DISCORD LOGIN
   const handleDiscord = async () => {
     setLoading(true);
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'discord',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`, // This ensures they come back to your site
+        redirectTo: `${window.location.origin}/auth/callback`,
       },
     });
     if (error) {
@@ -89,18 +84,19 @@ export default function Login() {
           </div>
           
           <button 
-            onClick={handleAuth} disabled={loading}
+            onClick={handleLogin} disabled={loading}
             className="w-full bg-gray-900 text-white font-bold py-3 rounded-xl hover:bg-gray-800 transition-colors"
           >
-            {loading ? <Loader2 className="animate-spin mx-auto" /> : (isSignUp ? "Create Account" : "Sign In")}
+            {loading ? <Loader2 className="animate-spin mx-auto" /> : "Sign In"}
           </button>
         </div>
 
+        {/* 👇 THE FIX: Actual Link to Signup Page */}
         <p className="text-center mt-6 text-sm text-gray-500">
-          {isSignUp ? "Already have an account?" : "New to NJZone?"}
-          <button onClick={() => setIsSignUp(!isSignUp)} className="ml-2 text-nj-pink font-bold hover:underline">
-            {isSignUp ? "Sign In" : "Sign Up"}
-          </button>
+          New to NJZone?
+          <Link href="/signup" className="ml-2 text-nj-pink font-bold hover:underline">
+            Sign Up
+          </Link>
         </p>
       </div>
     </div>
