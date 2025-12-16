@@ -1,105 +1,107 @@
 "use client";
 import { useState } from "react";
-import Link from "next/link";
+import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase"; // The key to the engine
-import { ArrowRight, Loader2, AlertCircle } from "lucide-react";
+import { Loader2, Mail, Lock, Gamepad2 } from "lucide-react"; // Using Gamepad2 as Discord icon placeholder
+import toast, { Toaster } from "react-hot-toast";
 
 export default function Login() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState("");
-  const [form, setForm] = useState({
-    email: "",
-    password: ""
-  });
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isSignUp, setIsSignUp] = useState(false);
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault(); // Stop the form from refreshing the page
+  // 📧 Email Login/Signup
+  const handleAuth = async () => {
     setLoading(true);
-    setErrorMsg("");
-
-    // 1. Ask Supabase to check the credentials
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: form.email,
-      password: form.password,
-    });
-
-    if (error) {
-      setErrorMsg(error.message); // Wrong password? User not found?
-      setLoading(false);
+    if (isSignUp) {
+      const { error } = await supabase.auth.signUp({ email, password });
+      if (error) toast.error(error.message);
+      else toast.success("Check your email to confirm! 📧");
     } else {
-      // 2. Success! Unlock the door.
-      router.push("/"); 
-      router.refresh(); // Force the app to realize we are logged in
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) toast.error(error.message);
+      else {
+        toast.success("Welcome back! 👋");
+        router.refresh();
+        router.push("/");
+      }
+    }
+    setLoading(false);
+  };
+
+  // 👾 DISCORD LOGIN (The New Feature)
+  const handleDiscord = async () => {
+    setLoading(true);
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'discord',
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`, // This ensures they come back to your site
+      },
+    });
+    if (error) {
+      toast.error(error.message);
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-pink-50 p-4">
-      <div className="bg-white p-8 rounded-3xl shadow-xl w-full max-w-md border border-pink-100">
-        
-        {/* Logo Header */}
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <Toaster position="bottom-center" />
+      
+      <div className="bg-white p-8 rounded-3xl shadow-xl border border-gray-100 w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-nj-pink rounded-2xl mx-auto flex items-center justify-center text-white text-2xl font-bold mb-4 rotate-3 shadow-lg shadow-pink-200">
-            NJ
-          </div>
-          <h1 className="text-3xl font-bold text-gray-900">Welcome Back! 🐰</h1>
-          <p className="text-gray-500 mt-2">Enter your credentials to hop back in.</p>
+          <h1 className="text-3xl font-black text-gray-900 mb-2">NJZone 🐰</h1>
+          <p className="text-gray-500">Enter the YapZone.</p>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleLogin} className="space-y-4">
-          
-          {/* Error Message Box */}
-          {errorMsg && (
-            <div className="bg-red-50 text-red-500 text-sm p-3 rounded-lg flex items-center gap-2">
-              <AlertCircle size={16} /> {errorMsg}
-            </div>
-          )}
+        {/* 👾 DISCORD BUTTON */}
+        <button 
+          onClick={handleDiscord}
+          disabled={loading}
+          className="w-full bg-[#5865F2] hover:bg-[#4752C4] text-white font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2 mb-6 shadow-md shadow-indigo-100"
+        >
+          {loading ? <Loader2 className="animate-spin" /> : <Gamepad2 size={20} />}
+          Continue with Discord
+        </button>
 
-          <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1">Email</label>
+        <div className="relative mb-6">
+          <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-200"></div></div>
+          <div className="relative flex justify-center text-xs uppercase"><span className="bg-white px-2 text-gray-400 font-bold">Or use email</span></div>
+        </div>
+
+        {/* Email Form */}
+        <div className="space-y-4">
+          <div className="bg-gray-50 flex items-center gap-3 p-3 rounded-xl border border-gray-200 focus-within:ring-2 focus-within:ring-nj-pink/50">
+            <Mail className="text-gray-400" size={20} />
             <input 
-              type="email" 
-              placeholder="bunnies@njzone.com" 
-              value={form.email}
-              onChange={(e) => setForm({...form, email: e.target.value})}
-              className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-nj-pink/50 focus:border-nj-pink transition-all"
+              type="email" placeholder="Email" className="bg-transparent outline-none flex-1 text-gray-900"
+              value={email} onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
+          <div className="bg-gray-50 flex items-center gap-3 p-3 rounded-xl border border-gray-200 focus-within:ring-2 focus-within:ring-nj-pink/50">
+            <Lock className="text-gray-400" size={20} />
+            <input 
+              type="password" placeholder="Password" className="bg-transparent outline-none flex-1 text-gray-900"
+              value={password} onChange={(e) => setPassword(e.target.value)}
             />
           </div>
           
-          <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1">Password</label>
-            <input 
-              type="password" 
-              placeholder="••••••••" 
-              value={form.password}
-              onChange={(e) => setForm({...form, password: e.target.value})}
-              className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-nj-pink/50 focus:border-nj-pink transition-all"
-            />
-          </div>
-
-          <div className="flex justify-end">
-            <a href="#" className="text-sm text-nj-pink font-bold hover:underline">Forgot password?</a>
-          </div>
-
           <button 
-            type="submit"
-            disabled={loading}
-            className="w-full bg-nj-pink text-white font-bold py-3 rounded-xl shadow-lg shadow-pink-200 hover:opacity-90 transition-all flex items-center justify-center gap-2 mt-2 disabled:opacity-50"
+            onClick={handleAuth} disabled={loading}
+            className="w-full bg-gray-900 text-white font-bold py-3 rounded-xl hover:bg-gray-800 transition-colors"
           >
-            {loading ? <Loader2 className="animate-spin" /> : <>Sign In <ArrowRight size={20} /></>}
+            {loading ? <Loader2 className="animate-spin mx-auto" /> : (isSignUp ? "Create Account" : "Sign In")}
           </button>
-        </form>
-
-        {/* Footer */}
-        <div className="mt-8 text-center text-gray-500 text-sm">
-          Don't have an account?{" "}
-          <Link href="/signup" className="text-nj-pink font-bold hover:underline">
-            Join the club
-          </Link>
         </div>
+
+        <p className="text-center mt-6 text-sm text-gray-500">
+          {isSignUp ? "Already have an account?" : "New to NJZone?"}
+          <button onClick={() => setIsSignUp(!isSignUp)} className="ml-2 text-nj-pink font-bold hover:underline">
+            {isSignUp ? "Sign In" : "Sign Up"}
+          </button>
+        </p>
       </div>
     </div>
   );

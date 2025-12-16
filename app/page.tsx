@@ -1,118 +1,296 @@
+"use client";
+import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import CreatePost from "@/components/CreatePost";
-import LikeButton from "@/components/LikeButton";
-import DeletePost from "@/components/DeletePost";
-import BetaModal from "@/components/BetaModal"; 
-import { MessageCircle, Repeat } from 'lucide-react';
+import Image from "next/image";
 import Link from "next/link";
+import { Megaphone, ShieldCheck, MessageCircle, Heart, Share2, Loader2, Trash2, Send } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
+import toast, { Toaster } from "react-hot-toast";
 
-export const revalidate = 0; 
+export default function Home() {
+  const [posts, setPosts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [announcement, setAnnouncement] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  
+  // 💬 Comment States
+  const [openCommentId, setOpenCommentId] = useState<string | null>(null);
+  const [newComment, setNewComment] = useState("");
+  const [commenting, setCommenting] = useState(false);
 
-export default async function Home() {
-  const { data: { user } } = await supabase.auth.getUser();
+  useEffect(() => {
+    fetchData();
+  }, []);
 
-  // 1. Fetch posts + profiles + likes + COMMENTS (ids only)
-  const { data: posts } = await supabase
-    .from('posts')
-    .select(`
-      *,
-      profiles (username, bias, avatar_url),
-      likes (user_id),
-      comments (id)
-    `)
-    .order('created_at', { ascending: false });
+  const fetchData = async () => {
+    setLoading(true);
+
+    // 1. Get Current User
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      setCurrentUserId(user.id);
+      const { data: profile } = await supabase.from('profiles').select('is_admin, is_banned').eq('id', user.id).single();
+      if (profile?.is_admin) setIsAdmin(true);
+      if (profile?.is_banned) {
+    alert("YOU HAVE BEEN BANNED FROM THE YAPZONE. 🔨");
+    await supabase.auth.signOut();
+    window.location.reload();
+    return;
+    }
+  }
+
+    // 2. Fetch Active Announcement
+    const { data: announceData } = await supabase
+      .from('announcements')
+      .select('content')
+      .eq('is_active', true)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+    if (announceData) setAnnouncement(announceData.content);
+
+    // 3. Fetch Posts + LIKES + COMMENTS (The Full Stack)
+    const { data: postsData, error } = await supabase
+      .from('posts')
+      .select(`
+        *,
+        profiles (username, avatar_url, frame_url, bias),
+        likes (user_id),
+        comments (
+          id, content, created_at,
+          profiles (username, avatar_url)
+        )
+      `)
+      .order('created_at', { ascending: false });
+
+    if (!error && postsData) {
+      const processedPosts = postsData.map(post => ({
+        ...post,
+        like_count: post.likes.length,
+        liked_by_me: user ? post.likes.some((like: any) => like.user_id === user.id) : false,
+        // Sort comments by newest first
+        comments: post.comments.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      }));
+      setPosts(processedPosts);
+    }
+    setLoading(false);
+  };
+
+  // ❤️ HANDLE LIKE
+  const handleLike = async (postId: string, isLiked: boolean) => {
+    if (!currentUserId) return toast.error("Login to like!");
+
+    // Optimistic Update
+    setPosts(posts.map(p => {
+      if (p.id === postId) {
+        return {
+          ...p,
+          liked_by_me: !isLiked,
+          like_count: isLiked ? p.like_count - 1 : p.like_count + 1
+        };
+      }
+      return p;
+    }));
+
+    if (isLiked) {
+      await supabase.from('likes').delete().eq('post_id', postId).eq('user_id', currentUserId);
+    } else {
+      await supabase.from('likes').insert({ post_id: postId, user_id: currentUserId });
+    }
+  };
+
+  // 💬 HANDLE COMMENT SUBMIT
+  const submitComment = async (postId: string) => {
+    if (!newComment.trim()) return;
+    setCommenting(true);
+
+    const { error } = await supabase.from('comments').insert({
+      post_id: postId,
+      user_id: currentUserId,
+      content: newComment
+    });
+
+    if (error) {
+      toast.error("Failed to yap back.");
+    } else {
+      toast.success("Reply sent!");
+      setNewComment("");
+      setOpenCommentId(null); // Close the box or keep it open, your choice
+      fetchData(); // Refresh to show the new comment
+    }
+    setCommenting(false);
+  };
+
+  const handleShare = (username: string, content: string) => {
+    navigator.clipboard.writeText(`@${username} yapped: "${content}" on NJZone`);
+    toast.success("Copied to clipboard!");
+  };
+
+  const handleDelete = async (postId: string) => {
+    if (!confirm("Admin: Delete this post?")) return;
+    await supabase.from('posts').delete().eq('id', postId);
+    setPosts(posts.filter(p => p.id !== postId));
+    toast.success("Post nuked.");
+  };
 
   return (
-    <div className="max-w-2xl mx-auto">
-      {/* 🚨 BETA MODAL (Shows only once) */}
-      <BetaModal />
-
-      <h1 className="text-3xl font-bold text-nj-text mb-6">Home Feed 🏠</h1>
+    <div className="max-w-2xl mx-auto py-8 px-4 pb-24">
+      <Toaster position="bottom-center" />
       
+      {/* 👑 ADMIN BUTTON */}
+      {isAdmin && (
+        <Link href="/admin">
+          <div className="mb-6 bg-gray-900 text-white p-3 rounded-xl flex items-center justify-between hover:bg-gray-800 transition-colors shadow-lg cursor-pointer group">
+            <div className="flex items-center gap-3">
+              <ShieldCheck className="text-nj-pink group-hover:scale-110 transition-transform" />
+              <span className="font-bold text-sm">Admin Dashboard</span>
+            </div>
+            <span className="text-xs text-gray-400">Manage App →</span>
+          </div>
+        </Link>
+      )}
+
+      {/* 📣 ANNOUNCEMENT */}
+      {announcement && (
+        <div className="mb-8 bg-gradient-to-r from-nj-pink to-purple-400 p-[2px] rounded-2xl shadow-sm animate-in fade-in slide-in-from-top-4 duration-500">
+          <div className="bg-white rounded-[14px] px-5 py-4 flex items-start gap-4">
+            <div className="bg-pink-50 p-2.5 rounded-full flex-shrink-0">
+              <Megaphone size={20} className="text-nj-pink animate-pulse" />
+            </div>
+            <div>
+              <p className="font-bold text-gray-900 text-sm mb-0.5">Announcement</p>
+              <p className="text-gray-600 text-sm leading-relaxed">{announcement}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 📝 CREATE POST */}
       <CreatePost />
-      
-      <div className="space-y-4">
-        {posts?.map((post: any) => {
-          const likeCount = post.likes.length;
-          const isLikedByMe = !!post.likes.find((like: any) => like.user_id === user?.id);
-          // 🔢 CALCULATE COMMENT COUNT
-          const commentCount = post.comments?.length || 0;
 
-          return (
-            <div key={post.id} className="bg-white p-6 rounded-2xl shadow-sm border border-pink-100">
-              <div className="flex justify-between items-start w-full mb-4">
-                <div className="flex items-center gap-3">
-                  
-                  {/* 🔗 LINK TO USER PROFILE (AVATAR) */}
-                  <Link href={`/user/${post.user_id}`}>
-                    <div className="w-10 h-10 rounded-full flex-shrink-0 overflow-hidden bg-gray-100 hover:opacity-80 transition-opacity relative border border-gray-100">
-                      {post.profiles?.avatar_url ? (
-                        <img src={post.profiles.avatar_url} alt={post.profiles.username} className="w-full h-full object-cover"/>
-                      ) : (
-                        <div className="w-full h-full bg-nj-pink flex items-center justify-center text-white font-bold uppercase text-sm">
-                          {post.profiles?.username?.charAt(0) || "U"}
-                        </div>
-                      )}
-                    </div>
-                  </Link>
-
-                  <div>
-                    <div className="flex items-center gap-2">
-                      {/* 🔗 LINK TO USER PROFILE (USERNAME) */}
-                      <Link href={`/user/${post.user_id}`} className="hover:underline decoration-nj-pink decoration-2 underline-offset-2">
-                        <h3 className="font-bold text-sm text-gray-900">@{post.profiles?.username || "unknown"}</h3>
-                      </Link>
-
-                      {post.profiles?.bias && (
-                        <span className="bg-pink-50 text-nj-pink text-[10px] px-2 py-0.5 rounded-full border border-pink-100 font-bold">
-                          {post.profiles.bias} Stan
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs text-gray-400">
-                      {new Date(post.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </p>
+      {/* 📰 FEED */}
+      {loading ? (
+        <div className="flex flex-col items-center justify-center py-20 text-gray-400 gap-3">
+          <Loader2 className="animate-spin text-nj-pink" size={32} />
+          <p className="text-sm font-medium">Loading YapZone...</p>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {posts.map((post) => (
+            <div key={post.id} className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+              
+              {/* Post Header */}
+              <div className="flex gap-4 mb-4 relative">
+                <div className="relative w-12 h-12 flex-shrink-0">
+                  <div className="w-12 h-12 rounded-full overflow-hidden border border-gray-100 relative z-0">
+                     <Image src={post.profiles?.avatar_url || "https://github.com/shadcn.png"} alt="Avatar" fill className="object-cover" />
                   </div>
+                  {post.profiles?.frame_url && (
+                    <div className="absolute -inset-1.5 z-10 pointer-events-none">
+                      <Image src={post.profiles.frame_url} alt="Frame" fill className="object-contain scale-90" />
+                    </div>
+                  )}
                 </div>
 
-                <DeletePost 
-                  postId={post.id} 
-                  authorId={post.user_id} 
-                  currentUserId={user?.id} 
-                />
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-bold text-gray-900">@{post.profiles?.username || 'User'}</h3>
+                    {post.profiles?.bias && (
+                      <span className="bg-pink-50 text-nj-pink text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wide">
+                        {post.profiles.bias}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-400">
+                    {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
+                  </p>
+                </div>
+                {isAdmin && (
+                  <button onClick={() => handleDelete(post.id)} className="absolute top-0 right-0 text-gray-300 hover:text-red-500 p-2"><Trash2 size={16}/></button>
+                )}
               </div>
-              
-              <Link href={`/post/${post.id}`} className="block hover:opacity-80 transition-opacity">
-                <p className="text-gray-700 mb-4 whitespace-pre-wrap leading-relaxed">{post.content}</p>
-              </Link>
-              
-              <div className="flex gap-6 text-gray-400 text-sm">
-                <LikeButton 
-                  postId={post.id} 
-                  initialCount={likeCount} 
-                  isLiked={isLikedByMe} 
-                />
-                
-                {/* 💬 THE REAL COMMENT COUNT */}
-                <Link href={`/post/${post.id}`} className="flex items-center gap-1 hover:text-nj-pink transition-colors group">
-                  <MessageCircle size={18} className="group-hover:scale-110 transition-transform"/> {commentCount}
-                </Link>
 
-                <button className="flex items-center gap-1 hover:text-green-500 transition-colors group">
-                  <Repeat size={18} className="group-hover:rotate-180 transition-transform duration-500"/> 0
+              {/* Content */}
+              <p className="text-gray-800 leading-relaxed mb-4 text-[15px]">{post.content}</p>
+
+              {/* Actions */}
+              <div className="flex items-center gap-6 text-gray-400 pt-4 border-t border-gray-50">
+                <button 
+                  onClick={() => handleLike(post.id, post.liked_by_me)}
+                  className={`flex items-center gap-2 transition-colors text-sm font-bold group ${post.liked_by_me ? 'text-red-500' : 'hover:text-red-400'}`}
+                >
+                  <Heart size={18} className={`transition-transform ${post.liked_by_me ? 'fill-current scale-110' : 'group-hover:scale-110'}`}/> 
+                  <span>{post.like_count || 0}</span>
+                </button>
+
+                {/* 💬 REPLY BUTTON - TOGGLES COMMENT SECTION */}
+                <button 
+                  onClick={() => setOpenCommentId(openCommentId === post.id ? null : post.id)}
+                  className={`flex items-center gap-2 transition-colors text-sm font-medium group ${openCommentId === post.id ? 'text-blue-500' : 'hover:text-blue-400'}`}
+                >
+                  <MessageCircle size={18} className="group-hover:scale-110 transition-transform"/> 
+                  <span>{post.comments?.length || 0}</span>
+                </button>
+
+                <button 
+                  onClick={() => handleShare(post.profiles?.username, post.content)}
+                  className="flex items-center gap-2 hover:text-green-500 transition-colors text-sm font-medium group ml-auto"
+                >
+                  <Share2 size={18} className="group-hover:scale-110 transition-transform"/> 
                 </button>
               </div>
-            </div>
-          );
-        })}
 
-        {(!posts || posts.length === 0) && (
-          <div className="text-center py-20">
-             <div className="text-6xl mb-4">🐇</div>
-             <p className="text-gray-400 text-lg">No posts yet... be the first to yap!</p>
-          </div>
-        )}
-      </div>
+              {/* 👇 COMMENT SECTION (Opens when Reply clicked) */}
+              {openCommentId === post.id && (
+                <div className="mt-4 pt-4 border-t border-gray-50 animate-in slide-in-from-top-2">
+                  
+                  {/* List of Comments */}
+                  <div className="space-y-3 mb-4 max-h-60 overflow-y-auto custom-scrollbar">
+                    {post.comments?.length > 0 ? (
+                      post.comments.map((comment: any) => (
+                        <div key={comment.id} className="flex gap-3 bg-gray-50 p-3 rounded-xl">
+                           <div className="w-8 h-8 rounded-full overflow-hidden relative flex-shrink-0 border border-white">
+                             <Image src={comment.profiles?.avatar_url || "https://github.com/shadcn.png"} alt="Av" fill className="object-cover"/>
+                           </div>
+                           <div>
+                             <p className="text-xs font-bold text-gray-900">@{comment.profiles?.username}</p>
+                             <p className="text-sm text-gray-700">{comment.content}</p>
+                           </div>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-xs text-gray-400 text-center italic">No yaps yet. Be the first!</p>
+                    )}
+                  </div>
+
+                  {/* Input Field */}
+                  <div className="flex gap-2">
+                    <input 
+                      type="text" 
+                      placeholder="Write a reply..." 
+                      className="flex-1 bg-gray-100 border-none rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-blue-200 outline-none"
+                      value={newComment}
+                      onChange={(e) => setNewComment(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && submitComment(post.id)}
+                    />
+                    <button 
+                      onClick={() => submitComment(post.id)}
+                      disabled={commenting}
+                      className="bg-blue-500 text-white p-2 rounded-xl hover:bg-blue-600 transition-colors disabled:opacity-50"
+                    >
+                      {commenting ? <Loader2 className="animate-spin" size={18}/> : <Send size={18}/>}
+                    </button>
+                  </div>
+
+                </div>
+              )}
+
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

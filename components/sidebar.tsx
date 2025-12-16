@@ -4,7 +4,7 @@ import Link from 'next/link';
 import Image from "next/image";
 import { usePathname } from 'next/navigation';
 import { supabase } from "@/lib/supabase"; 
-import { Home, FolderHeart, Calendar, User, MessageCircle } from 'lucide-react'; 
+import { Home, FolderHeart, Calendar, User, MessageCircle, ShoppingBag } from 'lucide-react'; 
 
 type SidebarProfile = {
   username: string;
@@ -41,6 +41,7 @@ export default function Sidebar() {
   const navItems = [
     { name: 'Home', href: '/', icon: Home },
     { name: 'YapZones', href: '/chat', icon: MessageCircle },
+    { name: 'Shop', href: '/shop', icon: ShoppingBag },
     { name: 'Projects', href: '/projects', icon: FolderHeart },
     { name: 'Calendar', href: '/calendar', icon: Calendar },
     { name: 'Profile', href: '/profile', icon: User },
@@ -121,9 +122,9 @@ export default function Sidebar() {
                <span className="bg-white/80 backdrop-blur-sm text-nj-pink px-1.5 py-0.5 rounded-full border border-white/50 truncate font-bold shadow-sm">
                  {profile.bias}
                </span>
-               <span className="text-yellow-700 font-bold whitespace-nowrap drop-shadow-sm">
-                 🪙 {profile.tokki_points}
-               </span>
+<span className="text-yellow-700 font-bold whitespace-nowrap drop-shadow-sm">
+  🪙 {profile.tokki_points} Tokkins
+</span>
             </div>
           </div>
         </div>
