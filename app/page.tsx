@@ -34,12 +34,12 @@ export default function Home() {
       const { data: profile } = await supabase.from('profiles').select('is_admin, is_banned').eq('id', user.id).single();
       if (profile?.is_admin) setIsAdmin(true);
       if (profile?.is_banned) {
-    alert("YOU HAVE BEEN BANNED FROM THE YAPZONE. 🔨");
-    await supabase.auth.signOut();
-    window.location.reload();
-    return;
+        alert("YOU HAVE BEEN BANNED FROM THE YAPZONE. 🔨");
+        await supabase.auth.signOut();
+        window.location.reload();
+        return;
+      }
     }
-  }
 
     // 2. Fetch Active Announcement
     const { data: announceData } = await supabase
@@ -51,7 +51,7 @@ export default function Home() {
       .single();
     if (announceData) setAnnouncement(announceData.content);
 
-    // 3. Fetch Posts + LIKES + COMMENTS (The Full Stack)
+    // 3. Fetch Posts + LIKES + COMMENTS
     const { data: postsData, error } = await supabase
       .from('posts')
       .select(`
@@ -70,7 +70,6 @@ export default function Home() {
         ...post,
         like_count: post.likes.length,
         liked_by_me: user ? post.likes.some((like: any) => like.user_id === user.id) : false,
-        // Sort comments by newest first
         comments: post.comments.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
       }));
       setPosts(processedPosts);
@@ -117,8 +116,8 @@ export default function Home() {
     } else {
       toast.success("Reply sent!");
       setNewComment("");
-      setOpenCommentId(null); // Close the box or keep it open, your choice
-      fetchData(); // Refresh to show the new comment
+      setOpenCommentId(null);
+      fetchData(); 
     }
     setCommenting(false);
   };
@@ -185,7 +184,7 @@ export default function Home() {
               <div className="flex gap-4 mb-4 relative">
                 <div className="relative w-12 h-12 flex-shrink-0">
                   <div className="w-12 h-12 rounded-full overflow-hidden border border-gray-100 relative z-0">
-                     <Image src={post.profiles?.avatar_url || "https://github.com/shadcn.png"} alt="Avatar" fill className="object-cover" />
+                      <Image src={post.profiles?.avatar_url || "https://github.com/shadcn.png"} alt="Avatar" fill className="object-cover" />
                   </div>
                   {post.profiles?.frame_url && (
                     <div className="absolute -inset-1.5 z-10 pointer-events-none">
@@ -213,7 +212,19 @@ export default function Home() {
               </div>
 
               {/* Content */}
-              <p className="text-gray-800 leading-relaxed mb-4 text-[15px]">{post.content}</p>
+              <p className="text-gray-800 leading-relaxed mb-4 text-[15px] whitespace-pre-wrap">{post.content}</p>
+
+              {/* 🖼️ IMAGE DISPLAY (THE NEW PART) */}
+              {post.image_url && (
+                <div className="mb-4 rounded-2xl overflow-hidden border border-gray-100 relative bg-gray-50">
+                   <img 
+                     src={post.image_url} 
+                     alt="Post Attachment" 
+                     className="w-full h-auto max-h-[500px] object-cover"
+                     loading="lazy"
+                   />
+                </div>
+              )}
 
               {/* Actions */}
               <div className="flex items-center gap-6 text-gray-400 pt-4 border-t border-gray-50">
@@ -225,7 +236,7 @@ export default function Home() {
                   <span>{post.like_count || 0}</span>
                 </button>
 
-                {/* 💬 REPLY BUTTON - TOGGLES COMMENT SECTION */}
+                {/* 💬 REPLY BUTTON */}
                 <button 
                   onClick={() => setOpenCommentId(openCommentId === post.id ? null : post.id)}
                   className={`flex items-center gap-2 transition-colors text-sm font-medium group ${openCommentId === post.id ? 'text-blue-500' : 'hover:text-blue-400'}`}
@@ -242,11 +253,9 @@ export default function Home() {
                 </button>
               </div>
 
-              {/* 👇 COMMENT SECTION (Opens when Reply clicked) */}
+              {/* 👇 COMMENT SECTION */}
               {openCommentId === post.id && (
                 <div className="mt-4 pt-4 border-t border-gray-50 animate-in slide-in-from-top-2">
-                  
-                  {/* List of Comments */}
                   <div className="space-y-3 mb-4 max-h-60 overflow-y-auto custom-scrollbar">
                     {post.comments?.length > 0 ? (
                       post.comments.map((comment: any) => (
@@ -265,7 +274,6 @@ export default function Home() {
                     )}
                   </div>
 
-                  {/* Input Field */}
                   <div className="flex gap-2">
                     <input 
                       type="text" 
@@ -283,10 +291,8 @@ export default function Home() {
                       {commenting ? <Loader2 className="animate-spin" size={18}/> : <Send size={18}/>}
                     </button>
                   </div>
-
                 </div>
               )}
-
             </div>
           ))}
         </div>
