@@ -188,7 +188,7 @@ export default function Profile() {
             </div>
             {profile.frame_url && (
               <div className="absolute inset-0 pointer-events-none z-20 flex items-center justify-center">
-                <img src={profile.frame_url} alt="Frame" className="w-full h-full object-contain scale-[1.25]" />
+                <img src={profile.frame_url} alt="Frame" className="w-full h-full object-contain scale-[1.05]" />
               </div>
             )}
             <label className="absolute inset-0 z-30 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
