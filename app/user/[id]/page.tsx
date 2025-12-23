@@ -1,7 +1,7 @@
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import { ArrowLeft, MessageCircle, Heart, ArrowRightLeft, Sparkles } from "lucide-react";
-
+import VerifiedBadge from "@/components/VerifiedBadge";
 export const revalidate = 0; // Always fetch fresh data
 
 export default async function PublicProfile({ params }: { params: Promise<{ id: string }> }) {
@@ -10,12 +10,13 @@ export default async function PublicProfile({ params }: { params: Promise<{ id: 
   // 1. Get Current Logged In User
   const { data: { user: currentUser } } = await supabase.auth.getUser();
 
-  // 2. Fetch Profile
-  const { data: profile } = await supabase
+// Inside fetch profile...
+const { data: profile } = await supabase
     .from('profiles')
-    .select('*')
+    .select('*, is_verified') // 👈 Make sure is_verified is included (or use *)
     .eq('id', id)
     .single();
+
 
   // 3. Fetch Inventory Count & Top Cards
   const { data: rawCards } = await supabase
@@ -106,7 +107,11 @@ export default async function PublicProfile({ params }: { params: Promise<{ id: 
           <div>
              <div className="flex justify-between items-start">
                 <div>
-                   <h1 className="text-3xl font-black text-gray-900">@{profile.username}</h1>
+                   <h1 className="text-3xl font-black text-gray-900 flex items-center gap-1">
+    @{profile.username}
+    {profile.is_verified && <VerifiedBadge size={24} />}
+</h1>
+
                    <div className="flex items-center gap-2 mt-2">
                       <span className="bg-pink-100 text-nj-pink px-3 py-1 rounded-full text-xs font-bold border border-pink-200 uppercase tracking-wide">
                          {profile.bias || "OT5"} Stan

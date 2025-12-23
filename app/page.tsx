@@ -8,6 +8,7 @@ import Link from "next/link";
 import { Megaphone, ShieldCheck, MessageCircle, Heart, Share2, Loader2, Trash2, Send } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import toast, { Toaster } from "react-hot-toast";
+import VerifiedBadge from "@/components/VerifiedBadge";
 
 export default function Home() {
   const [posts, setPosts] = useState<any[]>([]);
@@ -56,13 +57,13 @@ export default function Home() {
     const { data: postsData, error } = await supabase
       .from('posts')
       .select(`
-        *,
-        profiles (username, avatar_url, frame_url, bias),
+  *,
+        profiles (username, avatar_url, frame_url, bias, is_verified),
         likes (user_id),
         comments (
-          id, content, created_at,
-          profiles (username, avatar_url)
-        )
+        id, content, created_at,
+        profiles (username, avatar_url, is_verified)
+)
       `)
       .order('created_at', { ascending: false });
 
@@ -210,11 +211,13 @@ export default function Home() {
                 <div>
                   <div className="flex items-center gap-2">
                     {/* 🔗 USERNAME LINK */}
-                    <Link href={`/user/${post.user_id}`} className="hover:underline decoration-nj-pink underline-offset-2">
-                        <h3 className="font-bold text-gray-900 hover:text-nj-pink transition-colors">
-                            @{post.profiles?.username || 'User'}
-                        </h3>
-                    </Link>
+                    <Link href={`/user/${post.user_id}`} className="hover:underline decoration-nj-pink underline-offset-2 flex items-center gap-1">
+    <h3 className="font-bold text-gray-900 hover:text-nj-pink transition-colors">
+        @{post.profiles?.username || 'User'}
+    </h3>
+    {post.profiles?.is_verified && <VerifiedBadge size={16} />}
+</Link>
+
 
                     {post.profiles?.bias && (
                       <span className="bg-pink-50 text-nj-pink text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wide">
