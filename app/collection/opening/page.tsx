@@ -15,7 +15,7 @@ export default function PackOpeningPage() {
   const [cards, setCards] = useState<Card[]>([]);
   const router = useRouter();
   
-  // 🧠 SMART TRACKER: Only counts unique card indices
+  // 🧠 SMART TRACKER: Counts unique card positions (0, 1, 2) not card IDs
   const [flippedIndices, setFlippedIndices] = useState<Set<number>>(new Set());
 
   useEffect(() => {
@@ -28,16 +28,14 @@ export default function PackOpeningPage() {
   }, [router]);
 
   const handleCardFlip = (index: number) => {
-    // If this specific card (e.g., Card #2) is already in the list, ignore it.
     if (flippedIndices.has(index)) return;
 
-    // Otherwise, add it to the list
     const newSet = new Set(flippedIndices);
     newSet.add(index);
     setFlippedIndices(newSet);
 
-    // If this was the last card (Size becomes 3), trigger the finale
-    if (newSet.size === 3) {
+    // 🎉 FINALE: Trigger when ALL cards are flipped
+    if (newSet.size === cards.length && cards.length > 0) {
       setTimeout(() => {
         confetti({
             particleCount: 200,
@@ -58,11 +56,11 @@ export default function PackOpeningPage() {
 
       {/* Header */}
       <div className="mb-12 text-center z-10">
-        <h1 className="text-4xl font-black text-white tracking-tight mb-2 drop-shadow-lg">
-          {flippedIndices.size >= 3 ? "COLLECTION UPDATED!" : "TAP TO REVEAL"}
+        <h1 className="text-4xl font-black text-white tracking-tight mb-2 drop-shadow-lg animate-in slide-in-from-top-5 duration-700">
+          {flippedIndices.size === cards.length && cards.length > 0 ? "COLLECTION UPDATED!" : "TAP TO REVEAL"}
         </h1>
         <p className="text-gray-400 font-mono text-sm">
-          {flippedIndices.size}/3 Cards Revealed
+          {flippedIndices.size}/{cards.length} Cards Revealed
         </p>
       </div>
 
@@ -70,21 +68,22 @@ export default function PackOpeningPage() {
       <div className="flex flex-col md:flex-row gap-6 md:gap-10 items-center justify-center z-10 perspective-1000">
         {cards.map((card, index) => (
           <div 
-            key={index} 
+            // 🔑 THE FIX: Using index ensures duplicates are treated as separate cards
+            key={`pack-card-${index}`} 
             className="animate-in slide-in-from-bottom-10 fade-in duration-700"
             style={{ animationDelay: `${index * 150}ms` }}
           >
             <FlipCard 
               imageUrl={card.image_url} 
               rarity={card.rarity} 
-              onFlip={() => handleCardFlip(index)} // 👈 Passing the specific index now
+              onFlip={() => handleCardFlip(index)} 
             />
           </div>
         ))}
       </div>
 
-      {/* 🔘 ACTION BUTTONS (Logic: Show if size >= 3) */}
-      {flippedIndices.size >= 3 && (
+      {/* 🔘 ACTION BUTTONS (Show when all cards flipped) */}
+      {flippedIndices.size === cards.length && cards.length > 0 && (
         <div className="mt-16 flex gap-4 z-20 animate-in zoom-in duration-300">
           <button
             onClick={() => router.push("/shop")}
