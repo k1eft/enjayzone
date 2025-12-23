@@ -1,8 +1,9 @@
 "use client";
+
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import CreatePost from "@/components/CreatePost";
-import Image from "next/image";
+import Image from "next/image"; // Keep for UI icons if needed
 import Link from "next/link";
 import { Megaphone, ShieldCheck, MessageCircle, Heart, Share2, Loader2, Trash2, Send } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
@@ -182,20 +183,39 @@ export default function Home() {
               
               {/* Post Header */}
               <div className="flex gap-4 mb-4 relative">
-                <div className="relative w-12 h-12 flex-shrink-0">
-                  <div className="w-12 h-12 rounded-full overflow-hidden border border-gray-100 relative z-0">
-                      <Image src={post.profiles?.avatar_url || "https://github.com/shadcn.png"} alt="Avatar" fill className="object-cover" />
-                  </div>
-                  {post.profiles?.frame_url && (
-                    <div className="absolute -inset-1.5 z-10 pointer-events-none">
-                      <Image src={post.profiles.frame_url} alt="Frame" fill className="object-contain scale-90" />
+                
+                {/* 🔗 AVATAR LINK */}
+                <Link href={`/user/${post.user_id}`}>
+                    <div className="relative w-12 h-12 flex-shrink-0 cursor-pointer group">
+                        <div className="w-12 h-12 rounded-full overflow-hidden border border-gray-100 relative z-0 group-hover:opacity-80 transition-opacity">
+                            {/* 🖼️ USING STANDARD IMG FOR GIF SUPPORT */}
+                            <img 
+                                src={post.profiles?.avatar_url || "https://github.com/shadcn.png"} 
+                                alt="Avatar" 
+                                className="w-full h-full object-cover"
+                            />
+                        </div>
+                        {post.profiles?.frame_url && (
+                            <div className="absolute -inset-1.5 z-10 pointer-events-none">
+                                <img 
+                                    src={post.profiles.frame_url} 
+                                    alt="Frame" 
+                                    className="w-full h-full object-contain scale-90"
+                                />
+                            </div>
+                        )}
                     </div>
-                  )}
-                </div>
+                </Link>
 
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="font-bold text-gray-900">@{post.profiles?.username || 'User'}</h3>
+                    {/* 🔗 USERNAME LINK */}
+                    <Link href={`/user/${post.user_id}`} className="hover:underline decoration-nj-pink underline-offset-2">
+                        <h3 className="font-bold text-gray-900 hover:text-nj-pink transition-colors">
+                            @{post.profiles?.username || 'User'}
+                        </h3>
+                    </Link>
+
                     {post.profiles?.bias && (
                       <span className="bg-pink-50 text-nj-pink text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wide">
                         {post.profiles.bias}
@@ -214,9 +234,10 @@ export default function Home() {
               {/* Content */}
               <p className="text-gray-800 leading-relaxed mb-4 text-[15px] whitespace-pre-wrap">{post.content}</p>
 
-              {/* 🖼️ IMAGE DISPLAY (THE NEW PART) */}
+              {/* 🖼️ IMAGE DISPLAY */}
               {post.image_url && (
                 <div className="mb-4 rounded-2xl overflow-hidden border border-gray-100 relative bg-gray-50">
+                    {/* Standard img tag supports GIFs natively */}
                    <img 
                      src={post.image_url} 
                      alt="Post Attachment" 
@@ -260,11 +281,19 @@ export default function Home() {
                     {post.comments?.length > 0 ? (
                       post.comments.map((comment: any) => (
                         <div key={comment.id} className="flex gap-3 bg-gray-50 p-3 rounded-xl">
+                           {/* Avatar in comments */}
                            <div className="w-8 h-8 rounded-full overflow-hidden relative flex-shrink-0 border border-white">
-                             <Image src={comment.profiles?.avatar_url || "https://github.com/shadcn.png"} alt="Av" fill className="object-cover"/>
+                             <img 
+                                src={comment.profiles?.avatar_url || "https://github.com/shadcn.png"} 
+                                alt="Av" 
+                                className="w-full h-full object-cover"
+                             />
                            </div>
                            <div>
-                             <p className="text-xs font-bold text-gray-900">@{comment.profiles?.username}</p>
+                             {/* Link in comments too! */}
+                             <Link href={`/user/${comment.profiles?.id}`} className="hover:underline">
+                                <p className="text-xs font-bold text-gray-900">@{comment.profiles?.username}</p>
+                             </Link>
                              <p className="text-sm text-gray-700">{comment.content}</p>
                            </div>
                         </div>
