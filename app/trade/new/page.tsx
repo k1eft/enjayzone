@@ -1,14 +1,15 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, ArrowRightLeft, Loader2, Lock } from "lucide-react";
+import { ArrowLeft, ArrowRightLeft, Loader2 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 
-export default function NewTradePage() {
+// 1. We move all the logic into this sub-component
+function TradeContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const targetUserId = searchParams.get('target'); // Getting ?target=USER_ID
+  const targetUserId = searchParams.get('target'); 
 
   const [loading, setLoading] = useState(true);
   const [targetUser, setTargetUser] = useState<any>(null);
@@ -105,7 +106,7 @@ export default function NewTradePage() {
         <div className="w-10" /> {/* Spacer */}
       </div>
 
-      {/* 🎭 THE TRADING FLOOR (Split View) */}
+      {/* 🎭 THE TRADING FLOOR */}
       <div className="flex-1 flex flex-col md:flex-row gap-6 overflow-hidden min-h-0">
         
         {/* LEFT: THEIR CARDS (REQUEST) */}
@@ -124,7 +125,6 @@ export default function NewTradePage() {
                         `}
                     >
                         <img src={item.card.image_url} className="w-full h-full object-cover" />
-                        {/* Rarity Badge */}
                         <div className={`absolute top-1 right-1 w-2 h-2 rounded-full ring-1 ring-white
                             ${item.card.rarity === 'UR' ? 'bg-yellow-400' : item.card.rarity === 'SR' ? 'bg-purple-400' : 'bg-blue-400'}`} 
                         />
@@ -176,7 +176,16 @@ export default function NewTradePage() {
             {submitting ? <Loader2 className="animate-spin" /> : "Confirm Offer 🤝"}
         </button>
       </div>
-
     </div>
+  );
+}
+
+// 2. This is the main component that Next.js sees
+export default function NewTradePage() {
+  return (
+    // 3. ⚠️ THE FIX: We wrap the search params logic in Suspense
+    <Suspense fallback={<div className="flex justify-center items-center h-screen"><Loader2 className="animate-spin text-nj-pink" /></div>}>
+        <TradeContent />
+    </Suspense>
   );
 }
