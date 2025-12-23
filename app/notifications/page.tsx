@@ -1,33 +1,28 @@
 "use client";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { useRouter } from "next/navigation";
-import Image from "next/image";
-import { Heart, MessageCircle, Bell, Loader2, CheckCheck } from "lucide-react";
+import { Loader2, Bell, Heart, MessageCircle, ArrowRightLeft, CheckCircle } from "lucide-react";
+import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 
-export default function NotificationsPage() {
-  const router = useRouter();
+export default function ActivityPage() {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchNotifications();
+    markAsRead();
   }, []);
 
   const fetchNotifications = async () => {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      router.push("/login");
-      return;
-    }
+    if (!user) return;
 
-    // Fetch notifications + Actor details (Avatar/Username)
     const { data } = await supabase
       .from('notifications')
       .select(`
         *,
-        actor:profiles!actor_id (username, avatar_url) 
+        actor:profiles!actor_id (username, avatar_url)
       `)
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
@@ -35,82 +30,79 @@ export default function NotificationsPage() {
 
     setNotifications(data || []);
     setLoading(false);
-    
-    // Mark all as read immediately upon viewing (Lazy Dev Hack 🧠)
-    if (data && data.length > 0) {
-      await supabase
-        .from('notifications')
-        .update({ is_read: true })
-        .eq('user_id', user.id)
-        .eq('is_read', false);
+  };
+
+  const markAsRead = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      await supabase.from('notifications').update({ is_read: true }).eq('user_id', user.id);
     }
   };
 
-  if (loading) return <div className="flex justify-center p-20"><Loader2 className="animate-spin text-nj-pink" /></div>;
+  const getIcon = (type: string) => {
+    switch (type) {
+      case 'like': return <Heart size={16} className="text-red-500 fill-red-500" />;
+      case 'comment': return <MessageCircle size={16} className="text-blue-500 fill-blue-500" />;
+      case 'trade_offer': return <ArrowRightLeft size={16} className="text-green-500" />;
+      case 'trade_result': return <CheckCircle size={16} className="text-nj-pink" />;
+      default: return <Bell size={16} className="text-gray-500" />;
+    }
+  };
+
+  const getLink = (notif: any) => {
+    if (notif.type === 'trade_offer') return '/trade';
+    if (notif.type === 'comment' || notif.type === 'like') return '/'; // Ideally link to specific post
+    return '/';
+  };
 
   return (
-    <div className="max-w-2xl mx-auto min-h-screen pb-20 px-4 pt-6">
-      
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-8">
-        <div className="p-3 bg-pink-50 rounded-2xl">
-          <Bell className="text-nj-pink" size={24} />
-        </div>
-        <div>
-          <h1 className="text-2xl font-black text-gray-900">Notifications</h1>
-          <p className="text-gray-500 text-sm">See who's obsessing over you.</p>
-        </div>
-      </div>
+    <div className="max-w-xl mx-auto py-8 px-4">
+      <h1 className="text-2xl font-black text-gray-900 mb-6 flex items-center gap-2">
+        <Bell className="text-nj-pink" /> Activity
+      </h1>
 
-      {/* List */}
-      <div className="space-y-2">
-        {notifications.length > 0 ? (
-          notifications.map((notif) => (
-            <div 
-              key={notif.id} 
-              onClick={() => router.push(`/post/${notif.reference_id}`)}
-              className={`flex items-center gap-4 p-4 rounded-2xl transition-all cursor-pointer border
-                ${notif.is_read ? 'bg-white border-gray-100 hover:bg-gray-50' : 'bg-pink-50/50 border-pink-100'}`}
-            >
-              
-              {/* Actor Avatar */}
-              <div className="relative">
-                <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-100 border border-gray-200">
-                  {notif.actor?.avatar_url ? (
-                    <Image src={notif.actor.avatar_url} alt="User" fill className="object-cover" />
-                  ) : (
-                    <div className="w-full h-full bg-gray-300" />
-                  )}
+      {loading ? (
+        <div className="flex justify-center p-10"><Loader2 className="animate-spin text-nj-pink" /></div>
+      ) : (
+        <div className="space-y-2">
+          {notifications.length > 0 ? notifications.map((notif) => (
+            <Link key={notif.id} href={getLink(notif)}>
+              <div className={`flex items-center gap-4 p-4 rounded-2xl transition-all hover:scale-[1.01] cursor-pointer
+                  ${notif.is_read ? 'bg-white border border-gray-100' : 'bg-blue-50 border border-blue-100 shadow-sm'}
+              `}>
+                
+                {/* Avatar */}
+                <div className="relative">
+                   <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-200">
+                      <img src={notif.actor?.avatar_url || "https://github.com/shadcn.png"} className="w-full h-full object-cover" />
+                   </div>
+                   <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-1 shadow-sm">
+                      {getIcon(notif.type)}
+                   </div>
                 </div>
-                {/* Icon Badge */}
-                <div className={`absolute -bottom-1 -right-1 p-1 rounded-full border-2 border-white 
-                  ${notif.type === 'like' ? 'bg-red-100 text-red-500' : 'bg-blue-100 text-blue-500'}`}>
-                  {notif.type === 'like' ? <Heart size={12} fill="currentColor" /> : <MessageCircle size={12} />}
+
+                {/* Content */}
+                <div className="flex-1">
+                   <p className="text-sm text-gray-800">
+                      <span className="font-bold">@{notif.actor?.username}</span> {notif.message}
+                   </p>
+                   <p className="text-xs text-gray-400 mt-1">
+                      {formatDistanceToNow(new Date(notif.created_at), { addSuffix: true })}
+                   </p>
                 </div>
-              </div>
 
-              {/* Text Content */}
-              <div className="flex-1">
-                <p className="text-gray-900 text-sm">
-                  <span className="font-bold">@{notif.actor?.username || "Someone"}</span>
-                  {notif.type === 'like' ? " liked your post." : " commented on your post."}
-                </p>
-                <p className="text-gray-400 text-xs mt-0.5">
-                  {formatDistanceToNow(new Date(notif.created_at), { addSuffix: true })}
-                </p>
+                {!notif.is_read && (
+                    <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                )}
               </div>
-
-              {!notif.is_read && <div className="w-2 h-2 bg-nj-pink rounded-full" />}
+            </Link>
+          )) : (
+            <div className="text-center py-20 bg-gray-50 rounded-3xl border border-dashed border-gray-200">
+                <p className="text-gray-400 italic">No activity yet. It's quiet... too quiet. 🦗</p>
             </div>
-          ))
-        ) : (
-          <div className="text-center py-20 opacity-50">
-            <Bell size={48} className="mx-auto mb-4 text-gray-300" />
-            <p className="text-gray-400">No notifications yet. Flop era? 💀</p>
-          </div>
-        )}
-      </div>
-
+          )}
+        </div>
+      )}
     </div>
   );
 }

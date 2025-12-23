@@ -102,11 +102,12 @@ export default function Home() {
     }
   };
 
-  // 💬 HANDLE COMMENT SUBMIT
+  // 💬 HANDLE COMMENT SUBMIT (Updated with Notifications)
   const submitComment = async (postId: string) => {
     if (!newComment.trim()) return;
     setCommenting(true);
 
+    // 1. Insert the Comment
     const { error } = await supabase.from('comments').insert({
       post_id: postId,
       user_id: currentUserId,
@@ -117,12 +118,29 @@ export default function Home() {
       toast.error("Failed to yap back.");
     } else {
       toast.success("Reply sent!");
+
+      // 🔔 2. SEND NOTIFICATION
+      // Find the post so we know who to notify
+      const post = posts.find(p => p.id === postId);
+
+      // Only notify if the post exists AND you aren't replying to yourself
+      if (post && post.user_id !== currentUserId) {
+         await supabase.from('notifications').insert({
+            user_id: post.user_id,      // The Post Author (Receiver)
+            actor_id: currentUserId,    // You (The Sender)
+            type: 'comment',
+            message: 'yapped on your post. 🗣️',
+            resource_id: postId
+         });
+      }
+
       setNewComment("");
       setOpenCommentId(null);
       fetchData(); 
     }
     setCommenting(false);
   };
+
 
   const handleShare = (username: string, content: string) => {
     navigator.clipboard.writeText(`@${username} yapped: "${content}" on NJZone`);
