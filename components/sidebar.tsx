@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from "next/image";
 import { usePathname } from 'next/navigation';
 import { supabase } from "@/lib/supabase"; 
-import { Home, FolderHeart, Calendar, User, MessageCircle, ShoppingBag, Bell, Gamepad2 } from 'lucide-react'; 
+import { Home, FolderHeart, Calendar, User, MessageCircle, ShoppingBag, Bell, Gamepad2, Handshake } from 'lucide-react'; 
 
 type SidebarProfile = {
   username: string;
@@ -49,6 +49,7 @@ const navItems = [
     { name: 'Projects', href: '/projects', icon: FolderHeart },
     { name: 'Calendar', href: '/calendar', icon: Calendar },
     { name: 'Profile', href: '/profile', icon: User },
+    { name: 'Trading', href: '/trade', icon: Handshake },
 ];
 
   return (
