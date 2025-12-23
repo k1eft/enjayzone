@@ -42,7 +42,7 @@ export default function Sidebar() {
   
 const navItems = [
     { name: 'Home', href: '/', icon: Home },
-    { name: 'Arcade', href: '/arcade/memory', icon: Gamepad2 },
+    { name: 'Arcade', href: '/arcade', icon: Gamepad2 },
     { name: 'YapZones', href: '/chat', icon: MessageCircle },
     { name: 'Activity', href: '/notifications', icon: Bell }, // 👈 NEW ADDITION
     { name: 'Shop', href: '/shop', icon: ShoppingBag },
