@@ -1,10 +1,19 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import Sidebar from "@/components/sidebar";
+import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 import { Analytics } from "@vercel/analytics/next";
 
 const inter = Inter({ subsets: ["latin"] });
+
+export const viewport: Viewport = {
+  themeColor: "#ffffff",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+};
 
 export const metadata: Metadata = {
   // ⚠️ CHANGE THIS TO YOUR ACTUAL VERCEL DOMAIN WHEN DEPLOYED
@@ -15,6 +24,11 @@ export const metadata: Metadata = {
     template: "%s | NJZone"
   },
   description: "Join the ultimate NewJeans community. Collect digital photocards, yap in the chat, and customize your profile.",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "NJZone",
+  },
 
   // 🟦 DISCORD / FACEBOOK / IMESSAGE EMBEDS
   openGraph: {
@@ -51,6 +65,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
+        <ServiceWorkerRegister />
         <div className="flex min-h-screen bg-gray-50">
           
           {/* Sidebar (Desktop) / Bottom Nav (Mobile) */}

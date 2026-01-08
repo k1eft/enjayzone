@@ -7,7 +7,18 @@
   --foreground-rgb: 0, 0, 0;
 }
 
+html, body {
+  overscroll-behavior-y: none;
+}
+
 body {
   color: #4a4a4a; /* nj-text */
   background: white;
+}
+
+/* Prevent auto-zoom on mobile inputs */
+@media screen and (max-width: 768px) {
+  input, textarea, select {
+    font-size: 16px !important;
+  }
 }
