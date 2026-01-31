@@ -4,13 +4,15 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import CreatePost from "@/components/CreatePost";
 import Image from "next/image"; // Keep for UI icons if needed
-import Link from "next/link";
+import { Link } from '@/i18n/routing';
 import { Megaphone, ShieldCheck, MessageCircle, Heart, Share2, Loader2, Trash2, Send } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import toast, { Toaster } from "react-hot-toast";
 import VerifiedBadge from "@/components/VerifiedBadge";
+import { useTranslations } from 'next-intl';
 
 export default function Home() {
+  const t = useTranslations('Home');
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [announcement, setAnnouncement] = useState<string | null>(null);
@@ -36,7 +38,7 @@ export default function Home() {
       const { data: profile } = await supabase.from('profiles').select('is_admin, is_banned').eq('id', user.id).single();
       if (profile?.is_admin) setIsAdmin(true);
       if (profile?.is_banned) {
-        alert("YOU HAVE BEEN BANNED FROM THE YAPZONE. 🔨");
+        alert(t('bannedMessage'));
         await supabase.auth.signOut();
         window.location.reload();
         return;
@@ -81,7 +83,7 @@ export default function Home() {
 
   // ❤️ HANDLE LIKE
   const handleLike = async (postId: string, isLiked: boolean) => {
-    if (!currentUserId) return toast.error("Login to like!");
+    if (!currentUserId) return toast.error(t('loginToLike'));
 
     // Optimistic Update
     setPosts(posts.map(p => {
@@ -115,9 +117,9 @@ export default function Home() {
     });
 
     if (error) {
-      toast.error("Failed to yap back.");
+      toast.error(t('failedToReply'));
     } else {
-      toast.success("Reply sent!");
+      toast.success(t('replySent'));
 
       // 🔔 2. SEND NOTIFICATION
       // Find the post so we know who to notify
@@ -129,7 +131,7 @@ export default function Home() {
             user_id: post.user_id,      // The Post Author (Receiver)
             actor_id: currentUserId,    // You (The Sender)
             type: 'comment',
-            message: 'yapped on your post. 🗣️',
+            message: t('notificationYapped'),
             resource_id: postId
          });
       }
@@ -143,15 +145,15 @@ export default function Home() {
 
 
   const handleShare = (username: string, content: string) => {
-    navigator.clipboard.writeText(`@${username} yapped: "${content}" on NJZone`);
-    toast.success("Copied to clipboard!");
+    navigator.clipboard.writeText(t('yappedClipboard', {username, content}));
+    toast.success(t('copiedClipboard'));
   };
 
   const handleDelete = async (postId: string) => {
-    if (!confirm("Admin: Delete this post?")) return;
+    if (!confirm(t('adminDeleteConfirm'))) return;
     await supabase.from('posts').delete().eq('id', postId);
     setPosts(posts.filter(p => p.id !== postId));
-    toast.success("Post nuked.");
+    toast.success(t('postNuked'));
   };
 
   return (
@@ -164,9 +166,9 @@ export default function Home() {
           <div className="mb-6 bg-gray-900 text-white p-3 rounded-xl flex items-center justify-between hover:bg-gray-800 transition-colors shadow-lg cursor-pointer group">
             <div className="flex items-center gap-3">
               <ShieldCheck className="text-nj-pink group-hover:scale-110 transition-transform" />
-              <span className="font-bold text-sm">Admin Dashboard</span>
+              <span className="font-bold text-sm">{t('adminDashboard')}</span>
             </div>
-            <span className="text-xs text-gray-400">Manage App →</span>
+            <span className="text-xs text-gray-400">{t('manageApp')}</span>
           </div>
         </Link>
       )}
@@ -179,7 +181,7 @@ export default function Home() {
               <Megaphone size={20} className="text-nj-pink animate-pulse" />
             </div>
             <div>
-              <p className="font-bold text-gray-900 text-sm mb-0.5">Announcement</p>
+              <p className="font-bold text-gray-900 text-sm mb-0.5">{t('announcement')}</p>
               <p className="text-gray-600 text-sm leading-relaxed">{announcement}</p>
             </div>
           </div>
@@ -193,7 +195,7 @@ export default function Home() {
       {loading ? (
         <div className="flex flex-col items-center justify-center py-20 text-gray-400 gap-3">
           <Loader2 className="animate-spin text-nj-pink" size={32} />
-          <p className="text-sm font-medium">Loading YapZone...</p>
+          <p className="text-sm font-medium">{t('loading')}</p>
         </div>
       ) : (
         <div className="space-y-6">
@@ -320,14 +322,14 @@ export default function Home() {
                         </div>
                       ))
                     ) : (
-                      <p className="text-xs text-gray-400 text-center italic">No yaps yet. Be the first!</p>
+                      <p className="text-xs text-gray-400 text-center italic">{t('noYaps')}</p>
                     )}
                   </div>
 
                   <div className="flex gap-2">
                     <input 
                       type="text" 
-                      placeholder="Write a reply..." 
+                      placeholder={t('writeReply')}
                       className="flex-1 bg-gray-100 border-none rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-blue-200 outline-none"
                       value={newComment}
                       onChange={(e) => setNewComment(e.target.value)}
