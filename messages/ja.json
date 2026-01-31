@@ -1,1 +1,30 @@
-{}
+{
+  "Sidebar": {
+    "Home": "Home",
+    "Arcade": "Arcade",
+    "YapZones": "YapZones",
+    "Activity": "Activity",
+    "Shop": "Shop",
+    "Projects": "Projects",
+    "Calendar": "Calendar",
+    "Profile": "Profile",
+    "Trading": "Trading"
+  },
+  "Home": {
+    "bannedMessage": "YOU HAVE BEEN BANNED FROM THE YAPZONE. 🔨",
+    "loginToLike": "Login to like!",
+    "failedToReply": "Failed to yap back.",
+    "replySent": "Reply sent!",
+    "notificationYapped": "yapped on your post. 🗣️",
+    "copiedClipboard": "Copied to clipboard!",
+    "yappedClipboard": "@{username} yapped: \"{content}\" on NJZone",
+    "adminDeleteConfirm": "Admin: Delete this post?",
+    "postNuked": "Post nuked.",
+    "adminDashboard": "Admin Dashboard",
+    "manageApp": "Manage App →",
+    "announcement": "Announcement",
+    "loading": "Loading YapZone...",
+    "noYaps": "No yaps yet. Be the first!",
+    "writeReply": "Write a reply..."
+  }
+}
