@@ -1,7 +1,7 @@
 {
   "Sidebar": {
-    "Home": "Home",
-    "Arcade": "Arcade",
+    "Home": "홈",
+    "Arcade": "아케이드",
     "YapZones": "YapZones",
     "Activity": "Activity",
     "Shop": "Shop",
@@ -23,7 +23,7 @@
     "adminDashboard": "Admin Dashboard",
     "manageApp": "Manage App →",
     "announcement": "Announcement",
-    "loading": "Loading YapZone...",
+    "loading": "",
     "noYaps": "No yaps yet. Be the first!",
     "writeReply": "Write a reply..."
   }
