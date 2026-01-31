@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from 'next/link';
 import Image from "next/image";
-import { usePathname } from 'next/navigation';
+import { Link, usePathname } from '@/i18n/routing';
 import { supabase } from "@/lib/supabase"; 
 import { Home, FolderHeart, Calendar, User, MessageCircle, ShoppingBag, Bell, Gamepad2, Handshake } from 'lucide-react'; 
+import { useTranslations } from 'next-intl';
 
 type SidebarProfile = {
   username: string;
@@ -16,6 +16,7 @@ type SidebarProfile = {
 };
 
 export default function Sidebar() {
+  const t = useTranslations('Sidebar');
   const pathname = usePathname();
   const [profile, setProfile] = useState<SidebarProfile | null>(null);
 
@@ -36,21 +37,22 @@ export default function Sidebar() {
   }, []);
 
   // Hide on Auth Pages
+  // Note: pathname from i18n/routing excludes the locale, so this check works for all locales!
   if (pathname === '/login' || pathname === '/signup' || pathname === '/signup/bias') {
     return null;
   }
   
-const navItems = [
-    { name: 'Home', href: '/', icon: Home },
-    { name: 'Arcade', href: '/arcade', icon: Gamepad2 },
-    { name: 'YapZones', href: '/chat', icon: MessageCircle },
-    { name: 'Activity', href: '/notifications', icon: Bell }, // 👈 NEW ADDITION
-    { name: 'Shop', href: '/shop', icon: ShoppingBag },
-    { name: 'Projects', href: '/projects', icon: FolderHeart },
-    { name: 'Calendar', href: '/calendar', icon: Calendar },
-    { name: 'Profile', href: '/profile', icon: User },
-    { name: 'Trading', href: '/trade', icon: Handshake },
-];
+  const navItems = [
+      { name: t('Home'), href: '/', icon: Home },
+      { name: t('Arcade'), href: '/arcade', icon: Gamepad2 },
+      { name: t('YapZones'), href: '/chat', icon: MessageCircle },
+      { name: t('Activity'), href: '/notifications', icon: Bell },
+      { name: t('Shop'), href: '/shop', icon: ShoppingBag },
+      { name: t('Projects'), href: '/projects', icon: FolderHeart },
+      { name: t('Calendar'), href: '/calendar', icon: Calendar },
+      { name: t('Profile'), href: '/profile', icon: User },
+      { name: t('Trading'), href: '/trade', icon: Handshake },
+  ];
 
   return (
     <>
@@ -73,7 +75,7 @@ const navItems = [
             const isActive = pathname === item.href;
             return (
               <Link 
-                key={item.name} 
+                key={item.href} // Changed key to href to be stable across languages? Or keep name. href is unique.
                 href={item.href}
                 className={`flex items-center gap-4 px-4 py-3 rounded-2xl transition-all font-medium ${
                   isActive 
@@ -149,11 +151,11 @@ const navItems = [
         <div className="flex justify-between items-center">
           
           {/* We exclude Calendar on mobile to fit 5 icons comfortably */}
-          {navItems.filter(item => item.name !== 'Calendar').map((item) => {
+          {navItems.filter(item => item.href !== '/calendar').map((item) => {
              const isActive = pathname === item.href;
              return (
               <Link 
-                key={item.name} 
+                key={item.href}
                 href={item.href}
                 className="flex flex-col items-center justify-center w-12 gap-1 group"
               >
