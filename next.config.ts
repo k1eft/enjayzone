@@ -1,22 +1,26 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {
+import createNextIntlPlugin from 'next-intl/plugin';
+import type { NextConfig } from 'next';
+
+const withNextIntl = createNextIntlPlugin();
+
+const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
-{
+      {
         protocol: 'https',
         hostname: 'github.com', 
       },
       {
         protocol: 'https',
-        hostname: 'avatars.githubusercontent.com', // 👈 GitHub avatars sometimes come from here
+        hostname: 'avatars.githubusercontent.com',
       },
       {
         protocol: 'https',
-        hostname: 'cdn.discordapp.com', // 👈 THE FIX FOR DISCORD
+        hostname: 'cdn.discordapp.com',
       },
       {
         protocol: 'https',
-        hostname: 'ldnwxsfnjvohjojsomve.supabase.co', // 👈 YOUR SUPABASE URL
+        hostname: 'ldnwxsfnjvohjojsomve.supabase.co',
         port: '',
         pathname: '/storage/v1/object/public/**',
       },
@@ -24,4 +28,4 @@ const nextConfig = {
   },
 };
 
-export default nextConfig;
+export default withNextIntl(nextConfig);
