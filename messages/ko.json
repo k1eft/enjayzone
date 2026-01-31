@@ -2,29 +2,29 @@
   "Sidebar": {
     "Home": "홈",
     "Arcade": "아케이드",
-    "YapZones": "YapZones",
-    "Activity": "Activity",
-    "Shop": "Shop",
-    "Projects": "Projects",
-    "Calendar": "Calendar",
-    "Profile": "Profile",
-    "Trading": "Trading"
+    "YapZones": "얍존",
+    "Activity": "활동",
+    "Shop": "상점",
+    "Projects": "프로젝트",
+    "Calendar": "캘린더",
+    "Profile": "프로필",
+    "Trading": "거래"
   },
   "Home": {
     "bannedMessage": "YOU HAVE BEEN BANNED FROM THE YAPZONE. 🔨",
     "loginToLike": "Login to like!",
     "failedToReply": "Failed to yap back.",
-    "replySent": "Reply sent!",
+    "replySent": "답변 완료!",
     "notificationYapped": "yapped on your post. 🗣️",
-    "copiedClipboard": "Copied to clipboard!",
+    "copiedClipboard": "클립보드에 복사됨!",
     "yappedClipboard": "@{username} yapped: \"{content}\" on NJZone",
-    "adminDeleteConfirm": "Admin: Delete this post?",
-    "postNuked": "Post nuked.",
-    "adminDashboard": "Admin Dashboard",
-    "manageApp": "Manage App →",
-    "announcement": "Announcement",
-    "loading": "",
-    "noYaps": "No yaps yet. Be the first!",
-    "writeReply": "Write a reply..."
+    "adminDeleteConfirm": "관리자: 이 게시물을 삭제하시겠습니까?",
+    "postNuked": "게시물이 삭제되었습니다.",
+    "adminDashboard": "관리자 대시보드",
+    "manageApp": "앱 관리 →",
+    "announcement": "발표",
+    "loading": "YapZone 로딩 중...",
+    "noYaps": "아직 아무도 댓글을 달지 않았네요. 첫 번째로 댓글을 달아보세요!",
+    "writeReply": "답글을 작성하세요..."
   }
 }
